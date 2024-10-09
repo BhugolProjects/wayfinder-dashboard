@@ -432,7 +432,9 @@ const Dashboard = () => {
       className=""
     >
       <div className="">
-        <img src="MMRC.png" alt="MMRC-Logo" className="w-20 h-20" />
+        <a href={process.env.REACT_APP_BASE_URL}>
+          <img src="MMRC.png" alt="MMRC-Logo" className="w-20 h-20" />
+          </a>
         <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
       </div>
       <div className="max-w-full mx-auto bg-white rounded-lg shadow-lg m-2 p-2">
