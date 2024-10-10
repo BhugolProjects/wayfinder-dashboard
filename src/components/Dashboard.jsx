@@ -287,19 +287,18 @@ const Dashboard = () => {
 
   const [topStations, setTopStations] = useState([]);
   const [allStations, setAllStations] = useState([]);
-
+  const [topPlaces, setTopPlaces] = useState([]);
+  const [placesMap, setPlacesMap] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch stations data
-
         const stationsResponse = await axios.get(
           `${process.env.REACT_APP_BASE_URL}items/Stations?limit=1000000`
         );
 
         const stations = stationsResponse.data.data;
-
         const sortedStations = stations.sort(
           (a, b) => b.Visitors_Count - a.Visitors_Count
         );
@@ -307,17 +306,47 @@ const Dashboard = () => {
         setTopStations(
           sortedStations.slice(0, 5).map((station) => ({
             name: station.Station_Name,
-
             visits: parseInt(station.Visitors_Count),
           }))
         );
 
         setAllStations(stations);
+
+        // Fetch places data
+        const placesResponse = await axios.get(
+          `${process.env.REACT_APP_BASE_URL}items/Places?limit=1000000`
+        );
+        const placesData = placesResponse.data.data;
+
+        // Create a map to associate Place.id with Locality_Name
+        const placesMap = placesData.reduce((acc, place) => {
+          acc[place.id] = place.Locality_Name;
+          return acc;
+        }, {});
+        setPlacesMap(placesMap);
+
         // Fetch visitor analysis data
         const visitorsResponse = await axios.get(
           `${process.env.REACT_APP_BASE_URL}items/Visitor_Analysis?limit=100000000`
         );
         const visitorsData = visitorsResponse.data.data;
+
+        // Count visits by place ID
+        const placeVisitCounts = visitorsData.reduce((acc, record) => {
+          acc[record.Place] = (acc[record.Place] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Sort and get top 5 places
+        const sortedPlaces = Object.entries(placeVisitCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([placeId, count]) => ({
+            name: placesMap[placeId] || `Place ${placeId}`, // Use the place name from placesMap
+            visits: count,
+          }));
+
+        setTopPlaces(sortedPlaces);
 
         // Parse visitor data and group by date
         const parsedVisitorsData = visitorsData.map((record) => ({
@@ -434,7 +463,7 @@ const Dashboard = () => {
       <div className="">
         <a href={process.env.REACT_APP_BASE_URL}>
           <img src="MMRC.png" alt="MMRC-Logo" className="w-20 h-20" />
-          </a>
+        </a>
         <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
       </div>
       <div className="max-w-full mx-auto bg-white rounded-lg shadow-lg m-2 p-2">
@@ -443,49 +472,47 @@ const Dashboard = () => {
           animate={{ y: 0 }}
           transition={{ type: "spring", stiffness: 100 }}
           className="text-3xl font-bold mb-8 text-gray-800"
-        >
-          
-        </motion.h1>
+        ></motion.h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Top 5 Most Visited Stations */}
-
-          <StationVisitsPieChart data={topStations} />
-
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-12">
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <Card
               title="Daily Visitors"
               value={visitorCount.daily.value}
-              // trend={visitorCount.daily.trend}
               color="bg-yellow-100"
             />
             <Card
               title="Weekly Visitors"
               value={visitorCount.weekly.value}
-              // trend={visitorCount.weekly.trend}
               color="bg-purple-100"
             />
             <Card
               title="Monthly Visitors"
               value={visitorCount.monthly.value}
-              // trend={visitorCount.monthly.trend}
               color="bg-green-100"
             />
             <Card
               title="Yearly Visitors"
               value={visitorCount.yearly.value}
-              // trend={visitorCount.yearly.trend}
               color="bg-blue-100"
             />
           </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Top 5 Most Visited Stations */}
+          <StationVisitsPieChart data={topStations} />
+
+          {/* Top 5 Most Visited Places */}
+          <StationVisitsPieChart data={topPlaces} />
+
+          
         </div>
       </div>
 
       {/* All Stations Visit Count */}
-
       <StationVisitsAllChart data={allStations} />
     </motion.div>
   );
 };
+
 
 export default Dashboard;
