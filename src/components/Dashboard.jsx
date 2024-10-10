@@ -75,7 +75,7 @@ const Card = ({ title, value, color }) => (
   </motion.div>
 );
 
-const StationVisitsPieChart = ({ data }) => (
+const StationVisitsPieChart = ({ data, title }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -83,7 +83,7 @@ const StationVisitsPieChart = ({ data }) => (
     className="bg-white rounded-lg shadow-md p-6"
   >
     <h2 className="text-xl font-semibold mb-4 text-gray-700">
-      Top 5 Most Visited Stations
+      {title}
     </h2>
 
     <ResponsiveContainer width="100%" height={300}>
@@ -499,10 +499,10 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Top 5 Most Visited Stations */}
-          <StationVisitsPieChart data={topStations} />
+          <StationVisitsPieChart data={topStations} title={"Top 5 Most Visited Stations"} />
 
           {/* Top 5 Most Visited Places */}
-          <StationVisitsPieChart data={topPlaces} />
+          <StationVisitsPieChart data={topPlaces} title={"Top 5 Most Visited Places"}/>
 
           
         </div>
