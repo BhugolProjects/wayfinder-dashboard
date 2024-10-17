@@ -80,59 +80,62 @@ const StationVisitsPieChart = ({ data, title }) => (
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.5 }}
-    className="bg-white rounded-lg shadow-md p-6"
+    className="bg-white rounded-lg shadow-md p-4 md:p-6" // Adjust padding for small screens
+    style={{ maxWidth: "100%", overflow: "hidden" }} // Prevent overflow issues
   >
-    <h2 className="text-xl font-semibold mb-4 text-gray-700">
+    <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-4 text-gray-700 text-center">
       {title}
     </h2>
 
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="visits"
-          label={({ name, percent }) =>
-            `${name} ${(percent * 100).toFixed(0)}%`
-          }
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-
-        <Tooltip />
-
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="w-full h-64 md:h-80">
+      {" "}
+      {/* Dynamic height based on screen */}
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius="80%"
+            dataKey="visits"
+            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+          >
+            {data.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend
+            align="center"
+            verticalAlign="bottom"
+            wrapperStyle={{ fontSize: "12px" }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   </motion.div>
 );
 
 const StationVisitsAllChart = ({ data }) => {
   const [selectedStations, setSelectedStations] = useState([]);
-
-  const [searchTerm, setSearchTerm] = useState("");
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     if (data.length > 0 && selectedStations.length === 0) {
-      setSelectedStations(data.map((station) => station.Station_Name));
+      setSelectedStations(data.map((station) => station.name)); // Ensure we're mapping correctly
     }
   }, [data]);
 
-  const filteredData = useMemo(() => {
-    return data.filter((station) =>
-      station.Station_Name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [data, searchTerm]);
+  const chartData = useMemo(() => {
+    return selectedStations.map((stationName) => {
+      const station = data.find((s) => s.name === stationName);
+      return { name: stationName, visitors: station.visits };
+    });
+  }, [data, selectedStations]);
 
   const handleStationToggle = (stationName) => {
     setSelectedStations((prev) =>
@@ -142,140 +145,107 @@ const StationVisitsAllChart = ({ data }) => {
     );
   };
 
-  const chartData = useMemo(() => {
-    let selectedData = selectedStations.map((stationName) => {
-      const station = data.find((s) => s.Station_Name === stationName);
-
-      return {
-        name: stationName,
-
-        visitors: parseInt(station.Visitors_Count),
-      };
-    });
-
-    // Apply the filter based on selected criteria
-
-    if (filter === "top10") {
-      return selectedData.sort((a, b) => b.visitors - a.visitors).slice(0, 10);
-    } else if (filter === "least10") {
-      return selectedData.sort((a, b) => a.visitors - b.visitors).slice(0, 10);
-    }
-
-    return selectedData;
-  }, [data, selectedStations, filter]);
+  const calculateChartHeight = () => Math.max(500, chartData.length * 30);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-6 bg-white rounded-lg shadow-md mb-12"
+      className="p-4 bg-white rounded-lg shadow-md mb-12"
     >
-      <h2 className="text-xl font-semibold mb-4 text-gray-700">
+      <h2 className="text-lg md:text-xl font-semibold mb-4 text-gray-700 text-center">
         All Stations Visit Count
       </h2>
 
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between">
-        {/* <input
-          type="text"
-          placeholder="Search stations..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-1/3 p-2 border border-gray-300 rounded mb-4 md:mb-0"
-          /> */}
-        <div
-          className="w-full md:w-1/3 p-2  md:mb-0"
-        ></div>
+        <div className="relative inline-block w-full md:w-auto">
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="bg-indigo-400 text-white px-3 py-2 rounded transition-all duration-300 hover:bg-indigo-500 focus:outline-none"
+        >
+            {isDropdownOpen ? 'Close List' : 'Select Stations'}
+        </button>
 
-        <div className="relative inline-block">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="bg-indigo-400 text-white px-3 py-2 rounded flex items-center justify-center transition-all duration-300 hover:bg-indigo-500 focus:outline-none"
-          >
-            {isDropdownOpen ? "Close List" : "Select Stations"}
-          </button>
-
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 border border-gray-300 rounded p-2 max-h-[200px] overflow-y-auto w-[200px] bg-white shadow-lg z-10">
-              <div className="flex items-center mb-2">
-                <input
-                  type="checkbox"
-                  id="select-all"
+        {isDropdownOpen && (
+            <div className="absolute mt-2 border border-gray-300 rounded p-2 max-h-[200px] overflow-y-auto w-full md:w-[200px] bg-white shadow-lg z-10">
+            <div className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                id="select-all"
                   checked={
-                    selectedStations.length === filteredData.length &&
-                    filteredData.length > 0
+                    selectedStations.length === data.length &&
+                    data.length > 0
                   }
                   onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedStations(
-                        filteredData.map((station) => station.Station_Name)
-                      );
-                    } else {
-                      setSelectedStations([]);
-                    }
+                    setSelectedStations(e.target.checked ? data.map((s) => s.Station_Name) : []);
                   }}
+                className="mr-2"
+              />
+              <label htmlFor="select-all" className="text-sm font-semibold">
+                Select All
+              </label>
+            </div>
+
+            {data.map((station) => (
+              <div key={station.name} className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  id={station.name}
+                  checked={selectedStations.includes(station.name)}
+                  onChange={() => handleStationToggle(station.name)}
                   className="mr-2"
                 />
-
-                <label htmlFor="select-all" className="text-sm font-semibold">
-                  Select All
+                <label htmlFor={station.name} className="text-sm">
+                  {station.name}
                 </label>
               </div>
-
-              {filteredData.map((station) => (
-                <div
-                  key={station.Station_Name}
-                  className="flex items-center mb-2"
-                >
-                  <input
-                    type="checkbox"
-                    id={station.Station_Name}
-                    checked={selectedStations.includes(station.Station_Name)}
-                    onChange={() => handleStationToggle(station.Station_Name)}
-                    className="mr-2"
-                  />
-
-                  <label htmlFor={station.Station_Name} className="text-sm">
-                    {station.Station_Name}
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
+        )}
         </div>
       </div>
 
-      <div className="h-[500px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} barSize={40}>
-            <CartesianGrid strokeDasharray="3 3" />
-
-            <XAxis
-              dataKey="name"
-              angle={-45}
-              textAnchor="end"
-              height={100}
-              interval={0}
-            />
-
-            <YAxis />
-
-            <Tooltip cursor={{ fill: "transparent" }} />
-
-            <Bar dataKey="visitors" radius={[10, 10, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={LIGHT_COLORS[index % LIGHT_COLORS.length]} // Apply light colors
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {chartData.length > 0 ? (
+        <div style={{ height: `${calculateChartHeight()}px` }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              barSize={20}
+              margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis
+                dataKey="name"
+                type="category"
+                width={100}
+              tick={{ fontSize: '12px', lineHeight: '16px', wordWrap: 'break-word' }}
+              tickFormatter={(value) =>
+                value.length > 12 ? `${value.slice(0, 12)}...` : value
+              }
+              interval={0} // Ensure all ticks are shown
+              />
+              <Tooltip
+                cursor={{ fill: "transparent" }}
+                formatter={(value, name, props) => [
+                  `${props.payload.name}: ${value}`,
+                ]}
+              />
+              <Bar dataKey="visitors" radius={[0, 10, 10, 0]}>
+                {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={LIGHT_COLORS[index % LIGHT_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : ("")}
     </motion.div>
   );
 };
+
 
 const Dashboard = () => {
   const [visitorCount, setVisitorCount] = useState({
@@ -293,109 +263,115 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch stations data
+        // Fetch station data
         const stationsResponse = await axios.get(
-          `${process.env.REACT_APP_BASE_URL}items/Stations?limit=1000000`
+          `${process.env.REACT_APP_BASE_URL}items/Stations?limit=100000000`
         );
-
-        const stations = stationsResponse.data.data;
-        const sortedStations = stations.sort(
-          (a, b) => b.Visitors_Count - a.Visitors_Count
-        );
-
-        setTopStations(
-          sortedStations.slice(0, 5).map((station) => ({
-            name: station.Station_Name,
-            visits: parseInt(station.Visitors_Count),
-          }))
-        );
-
-        setAllStations(stations);
-
-        // Fetch places data
+        const stationsData = stationsResponse.data.data;
+    
+        // Create a map to associate Station.id with Station_Name
+        const stationNameMap = stationsData.reduce((acc, station) => {
+          acc[station.id] = station.Station_Name;
+          return acc;
+        }, {});
+    
+        // Fetch place data
         const placesResponse = await axios.get(
-          `${process.env.REACT_APP_BASE_URL}items/Places?limit=1000000`
+          `${process.env.REACT_APP_BASE_URL}items/Places?limit=1000000000000`
         );
         const placesData = placesResponse.data.data;
-
+    
         // Create a map to associate Place.id with Locality_Name
-        const placesMap = placesData.reduce((acc, place) => {
+        const placeNameMap = placesData.reduce((acc, place) => {
           acc[place.id] = place.Locality_Name;
           return acc;
         }, {});
-        setPlacesMap(placesMap);
-
+    
         // Fetch visitor analysis data
         const visitorsResponse = await axios.get(
-          `${process.env.REACT_APP_BASE_URL}items/Visitor_Analysis?limit=100000000`
+          `${process.env.REACT_APP_BASE_URL}items/Visitor_Analysis?limit=1000000000000000`
         );
         const visitorsData = visitorsResponse.data.data;
-
-        // Count visits by place ID
+    
+        // Count visits by Station and Place
+        const stationVisitCounts = visitorsData.reduce((acc, record) => {
+          acc[record.Station] = (acc[record.Station] || 0) + 1;
+          return acc;
+        }, {});
+    
         const placeVisitCounts = visitorsData.reduce((acc, record) => {
           acc[record.Place] = (acc[record.Place] || 0) + 1;
           return acc;
         }, {});
-
+    
+        // Sort and get top 5 stations
+        const sortedStations = Object.entries(stationVisitCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([stationId, count]) => ({
+            name: stationNameMap[stationId] || `Station ${stationId}`, // Fetch name from map or fallback to ID
+            visits: count,
+          }));
+    
+        setTopStations(sortedStations);
+    
+        // Set all stations data for bar graph
+        const allStations = Object.entries(stationVisitCounts).map(
+          ([stationId, count]) => ({
+            name: stationNameMap[stationId] || `Station ${stationId}`, // Fetch name from map or fallback to ID
+            visits: count,
+          })
+        );
+        setAllStations(allStations);
+    
         // Sort and get top 5 places
         const sortedPlaces = Object.entries(placeVisitCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
           .map(([placeId, count]) => ({
-            name: placesMap[placeId] || `Place ${placeId}`, // Use the place name from placesMap
+            name: placeNameMap[placeId] || `Place ${placeId}`, // Fetch name from map or fallback to ID
             visits: count,
           }));
-
+    
         setTopPlaces(sortedPlaces);
-
+    
         // Parse visitor data and group by date
         const parsedVisitorsData = visitorsData.map((record) => ({
           date: parseISO(record.date_created),
         }));
-
+    
         const today = new Date();
-
-        // Generate last 30 days of dates
-        const todayStr = formatISO(today, { representation: "date" });
+    
+        // Generate date ranges
         const yesterday = subDays(today, 1);
-        const yesterdayStr = formatISO(yesterday, { representation: "date" });
-
         const thisWeekStart = startOfWeek(today, { weekStartsOn: 1 });
         const lastWeekStart = subWeeks(thisWeekStart, 1);
         const lastWeekEnd = subDays(thisWeekStart, 1);
-
         const thisMonthStart = startOfMonth(today);
         const lastMonthStart = subMonths(thisMonthStart, 1);
         const lastMonthEnd = subDays(thisMonthStart, 1);
-
         const thisYearStart = startOfYear(today);
         const lastYearStart = subYears(thisYearStart, 1);
         const lastYearEnd = subDays(thisYearStart, 1);
-
+    
         // Calculate totals for each period by filtering visitors based on date ranges
         const getVisitorsInRange = (startDate, endDate) =>
           parsedVisitorsData.filter((record) =>
             isWithinInterval(record.date, { start: startDate, end: endDate })
           ).length;
-
+    
         // Daily totals
         const dailyTotalVisitors = getVisitorsInRange(today, today);
-        const previousDailyTotalVisitors = getVisitorsInRange(
-          yesterday,
-          yesterday
-        );
+        const previousDailyTotalVisitors = getVisitorsInRange(yesterday, yesterday);
         const dailyTrend =
           previousDailyTotalVisitors === 0
             ? 0
             : ((dailyTotalVisitors - previousDailyTotalVisitors) /
                 previousDailyTotalVisitors) *
               100;
-
+    
         // Weekly totals
-        const currentWeekTotalVisitors = getVisitorsInRange(
-          thisWeekStart,
-          today
-        );
+        const currentWeekTotalVisitors = getVisitorsInRange(thisWeekStart, today);
         const previousWeekTotalVisitors = getVisitorsInRange(
           lastWeekStart,
           lastWeekEnd
@@ -406,12 +382,9 @@ const Dashboard = () => {
             : ((currentWeekTotalVisitors - previousWeekTotalVisitors) /
                 previousWeekTotalVisitors) *
               100;
-
+    
         // Monthly totals
-        const currentMonthTotalVisitors = getVisitorsInRange(
-          thisMonthStart,
-          today
-        );
+        const currentMonthTotalVisitors = getVisitorsInRange(thisMonthStart, today);
         const previousMonthTotalVisitors = getVisitorsInRange(
           lastMonthStart,
           lastMonthEnd
@@ -422,12 +395,9 @@ const Dashboard = () => {
             : ((currentMonthTotalVisitors - previousMonthTotalVisitors) /
                 previousMonthTotalVisitors) *
               100;
-
+    
         // Yearly totals
-        const currentYearTotalVisitors = getVisitorsInRange(
-          thisYearStart,
-          today
-        );
+        const currentYearTotalVisitors = getVisitorsInRange(thisYearStart, today);
         const previousYearTotalVisitors = getVisitorsInRange(
           lastYearStart,
           lastYearEnd
@@ -438,7 +408,7 @@ const Dashboard = () => {
             : ((currentYearTotalVisitors - previousYearTotalVisitors) /
                 previousYearTotalVisitors) *
               100;
-
+    
         setVisitorCount({
           daily: { value: dailyTotalVisitors, trend: dailyTrend },
           weekly: { value: currentWeekTotalVisitors, trend: weeklyTrend },
@@ -449,6 +419,8 @@ const Dashboard = () => {
         console.error("Error fetching data:", error);
       }
     };
+    
+    
 
     fetchData();
   }, []);
@@ -474,37 +446,41 @@ const Dashboard = () => {
           className="text-3xl font-bold mb-8 text-gray-800"
         ></motion.h1>
 
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <Card
-              title="Daily Visitors"
-              value={visitorCount.daily.value}
-              color="bg-yellow-100"
-            />
-            <Card
-              title="Weekly Visitors"
-              value={visitorCount.weekly.value}
-              color="bg-purple-100"
-            />
-            <Card
-              title="Monthly Visitors"
-              value={visitorCount.monthly.value}
-              color="bg-green-100"
-            />
-            <Card
-              title="Yearly Visitors"
-              value={visitorCount.yearly.value}
-              color="bg-blue-100"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <Card
+            title="Daily Visitors"
+            value={visitorCount.daily.value}
+            color="bg-yellow-100"
+          />
+          <Card
+            title="Weekly Visitors"
+            value={visitorCount.weekly.value}
+            color="bg-purple-100"
+          />
+          <Card
+            title="Monthly Visitors"
+            value={visitorCount.monthly.value}
+            color="bg-green-100"
+          />
+          <Card
+            title="Yearly Visitors"
+            value={visitorCount.yearly.value}
+            color="bg-blue-100"
+          />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Top 5 Most Visited Stations */}
-          <StationVisitsPieChart data={topStations} title={"Top 5 Most Visited Stations"} />
+          <StationVisitsPieChart
+            data={topStations}
+            title={"Top 5 Most Visited Stations"}
+          />
 
           {/* Top 5 Most Visited Places */}
-          <StationVisitsPieChart data={topPlaces} title={"Top 5 Most Visited Places"}/>
-
-          
+          <StationVisitsPieChart
+            data={topPlaces}
+            title={"Top 5 Most Visited Places"}
+          />
         </div>
       </div>
 
@@ -513,6 +489,5 @@ const Dashboard = () => {
     </motion.div>
   );
 };
-
 
 export default Dashboard;

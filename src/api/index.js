@@ -14,7 +14,7 @@ export async function getStationData() {
 
 export async function getVisitorAnalysisData() {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}items/Visitor_Analysis?limit=1000000`);
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}items/Visitor_Analysis?limit=1000000000000000`);
       const  data = response.data.data;
       // const data = stationData;
       return data;
