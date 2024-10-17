@@ -126,16 +126,19 @@ const StationVisitsAllChart = ({ data }) => {
 
   useEffect(() => {
     if (data.length > 0 && selectedStations.length === 0) {
-      setSelectedStations(data.map((station) => station.name)); // Ensure we're mapping correctly
+      setSelectedStations(data.map((station) => station.name));
     }
   }, [data]);
 
-  const chartData = useMemo(() => {
-    return selectedStations.map((stationName) => {
-      const station = data.find((s) => s.name === stationName);
-      return { name: stationName, visitors: station.visits };
-    });
-  }, [data, selectedStations]);
+  const handleSelectAllToggle = (isChecked) => {
+    if (isChecked) {
+      // Select all stations
+      setSelectedStations(data.map((s) => s.name));
+    } else {
+      // Unselect all stations
+      setSelectedStations([]);
+    }
+  };
 
   const handleStationToggle = (stationName) => {
     setSelectedStations((prev) =>
@@ -144,6 +147,13 @@ const StationVisitsAllChart = ({ data }) => {
         : [...prev, stationName]
     );
   };
+
+  const chartData = useMemo(() => {
+    return selectedStations.map((stationName) => {
+      const station = data.find((s) => s.name === stationName);
+      return { name: stationName, visitors: station.visits };
+    });
+  }, [data, selectedStations]);
 
   const calculateChartHeight = () => Math.max(500, chartData.length * 30);
 
@@ -160,49 +170,44 @@ const StationVisitsAllChart = ({ data }) => {
 
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between">
         <div className="relative inline-block w-full md:w-auto">
-        <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="bg-indigo-400 text-white px-3 py-2 rounded transition-all duration-300 hover:bg-indigo-500 focus:outline-none"
-        >
-            {isDropdownOpen ? 'Close List' : 'Select Stations'}
-        </button>
+          >
+            {isDropdownOpen ? "Close List" : "Select Stations"}
+          </button>
 
-        {isDropdownOpen && (
+          {isDropdownOpen && (
             <div className="absolute mt-2 border border-gray-300 rounded p-2 max-h-[200px] overflow-y-auto w-full md:w-[200px] bg-white shadow-lg z-10">
-            <div className="flex items-center mb-2">
-              <input
-                type="checkbox"
-                id="select-all"
-                  checked={
-                    selectedStations.length === data.length &&
-                    data.length > 0
-                  }
-                  onChange={(e) => {
-                    setSelectedStations(e.target.checked ? data.map((s) => s.Station_Name) : []);
-                  }}
-                className="mr-2"
-              />
-              <label htmlFor="select-all" className="text-sm font-semibold">
-                Select All
-              </label>
-            </div>
-
-            {data.map((station) => (
-              <div key={station.name} className="flex items-center mb-2">
+              <div className="flex items-center mb-2">
                 <input
                   type="checkbox"
-                  id={station.name}
-                  checked={selectedStations.includes(station.name)}
-                  onChange={() => handleStationToggle(station.name)}
+                  id="select-all"
+                  checked={selectedStations.length === data.length}
+                  onChange={(e) => handleSelectAllToggle(e.target.checked)}
                   className="mr-2"
                 />
-                <label htmlFor={station.name} className="text-sm">
-                  {station.name}
+                <label htmlFor="select-all" className="text-sm font-semibold">
+                  Select All
                 </label>
               </div>
-            ))}
-          </div>
-        )}
+
+              {data.map((station) => (
+                <div key={station.name} className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id={station.name}
+                    checked={selectedStations.includes(station.name)}
+                    onChange={() => handleStationToggle(station.name)}
+                    className="mr-2"
+                  />
+                  <label htmlFor={station.name} className="text-sm">
+                    {station.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -221,11 +226,11 @@ const StationVisitsAllChart = ({ data }) => {
                 dataKey="name"
                 type="category"
                 width={100}
-              tick={{ fontSize: '12px', lineHeight: '16px', wordWrap: 'break-word' }}
-              tickFormatter={(value) =>
-                value.length > 12 ? `${value.slice(0, 12)}...` : value
-              }
-              interval={0} // Ensure all ticks are shown
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) =>
+                  value.length > 12 ? `${value.slice(0, 12)}...` : value
+                }
+                interval={0}
               />
               <Tooltip
                 cursor={{ fill: "transparent" }}
@@ -235,16 +240,22 @@ const StationVisitsAllChart = ({ data }) => {
               />
               <Bar dataKey="visitors" radius={[0, 10, 10, 0]}>
                 {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={LIGHT_COLORS[index % LIGHT_COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={LIGHT_COLORS[index % LIGHT_COLORS.length]}
+                  />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      ) : ("")}
+      ) : (
+        <p className="text-center text-gray-500">No data available</p>
+      )}
     </motion.div>
   );
 };
+
 
 
 const Dashboard = () => {
