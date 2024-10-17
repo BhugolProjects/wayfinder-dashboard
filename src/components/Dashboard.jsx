@@ -320,7 +320,7 @@ const Dashboard = () => {
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
           .map(([stationId, count]) => ({
-            name: stationNameMap[stationId] || `Station ${stationId}`, // Fetch name from map or fallback to ID
+            name: stationNameMap[stationId] || `Station ${stationId}`,
             visits: count,
           }));
     
@@ -329,20 +329,21 @@ const Dashboard = () => {
         // Set all stations data for bar graph
         const allStations = Object.entries(stationVisitCounts).map(
           ([stationId, count]) => ({
-            name: stationNameMap[stationId] || `Station ${stationId}`, // Fetch name from map or fallback to ID
+            name: stationNameMap[stationId] || `Station ${stationId}`,
             visits: count,
           })
         );
         setAllStations(allStations);
     
-        // Sort and get top 5 places
+        // Sort and get top 5 places (skip places with null/undefined names)
         const sortedPlaces = Object.entries(placeVisitCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
           .map(([placeId, count]) => ({
-            name: placeNameMap[placeId] || `Place ${placeId}`, // Fetch name from map or fallback to ID
+            name: placeNameMap[placeId], // Skip undefined/null names
             visits: count,
-          }));
+          }))
+          .filter((place) => place.name) // Filter out null/undefined names
+          .sort((a, b) => b.visits - a.visits)
+          .slice(0, 5);
     
         setTopPlaces(sortedPlaces);
     
@@ -430,6 +431,7 @@ const Dashboard = () => {
         console.error("Error fetching data:", error);
       }
     };
+    
     
     
 
